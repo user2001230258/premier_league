@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 from config import FOOTBALL_DATA_API_KEY, PREMIER_LEAGUE_ID, UPDATE_INTERVAL
 import logging
 import eventlet
- 
 
 
 
@@ -19,8 +18,6 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'premier_league_secret'
-socketio = SocketIO(app, async_mode='eventlet')
 
 # Headers cho API requests
 headers = {
@@ -139,7 +136,7 @@ def background_update():
             logger.error(f"Background update error: {str(e)}")
         eventlet.sleep(UPDATE_INTERVAL)
 
-@app.route('/')
+app.route('/')
 def index():
     """Route chính của ứng dụng"""
     matches = fetch_matches()
@@ -189,3 +186,6 @@ if __name__ == '__main__':
     
     # Chạy ứng dụng với eventlet
     socketio.run(app, debug=True)
+
+if __name__ == '__main__':
+    app.run(debug=True)
