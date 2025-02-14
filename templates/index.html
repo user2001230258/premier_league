@@ -10,7 +10,10 @@
 <body>
     <div class="container">
         <header>
-            <h1>Premier League Live Results</h1>
+            <div class="header-content">
+                <img id="competition-logo" class="competition-logo" src="" alt="Premier League">
+                <h1>Premier League Live Results</h1>
+            </div>
             <div class="last-updated">Last updated: <span id="update-time"></span></div>
         </header>
 
@@ -20,6 +23,9 @@
         </div>
 
         <div id="matches" class="tab-content active">
+            <div class="date-filter">
+                <input type="date" id="match-date" onchange="filterMatchesByDate(this.value)">
+            </div>
             <div class="matches-container" id="matches-container">
                 <!-- Matches will be populated here -->
             </div>
@@ -49,7 +55,9 @@
     <script>
         const socket = io();
         
-        // Format date function
+        // Set default date to today
+        document.getElementById('match-date').valueAsDate = new Date();
+        
         function formatDate(dateString) {
             const date = new Date(dateString);
             return date.toLocaleString();
@@ -85,7 +93,7 @@
             container.innerHTML = '';
             
             if (matches.length === 0) {
-                container.innerHTML = '<div class="no-matches">No live matches at the moment</div>';
+                container.innerHTML = '<div class="no-matches">No matches scheduled for today</div>';
                 return;
             }
 
@@ -93,9 +101,15 @@
                 const matchDiv = document.createElement('div');
                 matchDiv.className = 'match-card';
                 matchDiv.innerHTML = `
-                    <div class="team home">${match.home_team}</div>
+                    <div class="team home">
+                        <img src="${match.home_team_logo}" alt="${match.home_team}" class="team-logo">
+                        <span>${match.home_team}</span>
+                    </div>
                     <div class="score ${match.status === 'LIVE' ? 'live' : ''}">${match.score}</div>
-                    <div class="team away">${match.away_team}</div>
+                    <div class="team away">
+                        <img src="${match.away_team_logo}" alt="${match.away_team}" class="team-logo">
+                        <span>${match.away_team}</span>
+                    </div>
                     <div class="status">${getStatusDisplay(match.status)}</div>
                     <div class="match-time">${formatDate(match.utcDate)}</div>
                 `;
@@ -103,15 +117,24 @@
             });
         }
 
-        function updateStandings(standings) {
+        function updateStandings(data) {
             const tbody = document.getElementById('standings-body');
+            const competitionLogo = document.getElementById('competition-logo');
             tbody.innerHTML = '';
             
-            standings.forEach(team => {
+            // Update competition logo
+            if (data.competition_logo) {
+                competitionLogo.src = data.competition_logo;
+            }
+            
+            data.standings.forEach(team => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${team.position}</td>
-                    <td class="team-name">${team.team}</td>
+                    <td class="team-name">
+                        <img src="${team.team_logo}" alt="${team.team}" class="team-logo-small">
+                        <span>${team.team}</span>
+                    </td>
                     <td>${team.played}</td>
                     <td>${team.won}</td>
                     <td>${team.draw}</td>
@@ -121,6 +144,15 @@
                 `;
                 tbody.appendChild(row);
             });
+        }
+
+        function filterMatchesByDate(date) {
+            fetch(`/api/matches?date=${date}`)
+                .then(response => response.json())
+                .then(data => {
+                    updateMatches(data.matches);
+                })
+                .catch(error => console.error('Error:', error));
         }
 
         // Socket.io event handlers
@@ -134,68 +166,11 @@
             updateDateTime(data.last_updated);
         });
 
-        // Manual refresh function
-        function refreshData() {
-            fetch('/api/refresh')
-                .then(response => response.json())
-                .then(data => {
-                    updateMatches(data.matches);
-                    updateStandings(data.standings);
-                    updateDateTime(data.last_updated);
-                })
-                .catch(error => console.error('Error refreshing data:', error));
-        }
-
         // Initialize with data from template
         const initialData = {{ initial_data|tojson|safe }};
         updateMatches(initialData.matches);
         updateStandings(initialData.standings);
         updateDateTime(initialData.last_updated);
-
-        // Thêm vào phần script trong index.html
-function updateStandings(standings) {
-    const tbody = document.getElementById('standings-body');
-    tbody.innerHTML = '';
-    
-    if (!standings || standings.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="8" class="no-data">
-                    No standings data available at the moment.
-                    Please check your API configuration.
-                </td>
-            </tr>
-        `;
-        return;
-    }
-    
-    standings.forEach(team => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${team.position}</td>
-            <td class="team-name">${team.team}</td>
-            <td>${team.played}</td>
-            <td>${team.won}</td>
-            <td>${team.draw}</td>
-            <td>${team.lost}</td>
-            <td>${team.goalDifference}</td>
-            <td class="points">${team.points}</td>
-        `;
-        tbody.appendChild(row);
-    });
-    
-    // Log để debug
-    console.log('Updated standings:', standings);
-}
-
-// Thêm event listener cho lỗi socket
-socket.on('connect_error', (error) => {
-    console.error('Socket connection error:', error);
-});
-
-socket.on('error', (error) => {
-    console.error('Socket error:', error);
-});
     </script>
 </body>
 </html>
