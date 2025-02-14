@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request  # Thêm request
 from flask_socketio import SocketIO
 import requests
 import threading
@@ -8,8 +8,6 @@ from config import FOOTBALL_DATA_API_KEY, PREMIER_LEAGUE_ID, UPDATE_INTERVAL
 import logging
 import eventlet
 
-
-
 # Patch để tránh lỗi với eventlet
 eventlet.monkey_patch()
 
@@ -18,6 +16,8 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'premier_league_secret'  # Thêm secret key
+socketio = SocketIO(app, async_mode='eventlet')  # Khởi tạo socketio
 
 # Headers cho API requests
 headers = {
@@ -136,7 +136,7 @@ def background_update():
             logger.error(f"Background update error: {str(e)}")
         eventlet.sleep(UPDATE_INTERVAL)
 
-app.route('/')
+@app.route('/')  # Thêm @ decorator
 def index():
     """Route chính của ứng dụng"""
     matches = fetch_matches()
@@ -178,6 +178,72 @@ def test_api():
             'api_key_used': FOOTBALL_DATA_API_KEY[:5] + '...'
         })
 
+@app.route('/api/matches')  # Thêm route cho matches API
+def get_matches_by_date():
+    """API endpoint để lấy trận đấu theo ngày"""
+    date = request.args.get('date')
+    logger.debug(f"Received request for matches on date: {date}")
+    
+    if not date:
+        logger.error("No date provided in request")
+        return jsonify({
+            'matches': [],
+            'status': 'error',
+            'message': 'No date provided'
+        })
+    
+    try:
+        match_date = datetime.strptime(date, '%Y-%m-%d').date()
+        dateFrom = match_date.strftime('%Y-%m-%d')
+        dateTo = (match_date + timedelta(days=1)).strftime('%Y-%m-%d')
+        
+        url = f'http://api.football-data.org/v4/competitions/{PREMIER_LEAGUE_ID}/matches'
+        params = {
+            'dateFrom': dateFrom,
+            'dateTo': dateTo,
+            'status': 'SCHEDULED,LIVE,IN_PLAY,PAUSED,FINISHED'
+        }
+        
+        response = requests.get(url, headers=headers, params=params)
+        if response.status_code == 200:
+            matches_data = response.json()
+            matches = []
+            competition_logo = matches_data.get('competition', {}).get('emblem', '')
+            
+            for match in matches_data.get('matches', []):
+                if match['status'] in ['FINISHED', 'IN_PLAY', 'PAUSED']:
+                    score = (
+                        f"{match['score']['fullTime'].get('home', 0) or 0}-"
+                        f"{match['score']['fullTime'].get('away', 0) or 0}"
+                    )
+                else:
+                    score = "vs"
+                
+                matches.append({
+                    'home_team': match['homeTeam']['name'],
+                    'home_team_logo': match['homeTeam'].get('crest', ''),
+                    'away_team': match['awayTeam']['name'],
+                    'away_team_logo': match['awayTeam'].get('crest', ''),
+                    'score': score,
+                    'status': match['status'],
+                    'utcDate': match['utcDate'],
+                    'competition_logo': competition_logo
+                })
+            
+            return jsonify({
+                'matches': matches,
+                'date': date,
+                'status': 'success'
+            })
+    except Exception as e:
+        logger.error(f"Error fetching matches: {str(e)}", exc_info=True)
+        return jsonify({
+            'matches': [],
+            'date': date,
+            'status': 'error',
+            'message': str(e)
+        })
+
 if __name__ == '__main__':
     # Khởi động thread cập nhật trong nền
     update_thread = threading.Thread(target=background_update)
@@ -186,6 +252,3 @@ if __name__ == '__main__':
     
     # Chạy ứng dụng với eventlet
     socketio.run(app, debug=True)
-
-if __name__ == '__main__':
-    app.run(debug=True)
