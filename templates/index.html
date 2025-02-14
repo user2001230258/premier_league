@@ -173,13 +173,21 @@
         updateDateTime(initialData.last_updated);
         // Thay thế Socket.IO bằng polling
     function startPolling() {
-        setInterval(() => {
-            const currentDate = document.getElementById('match-date').value;
-            if (currentDate === new Date().toISOString().split('T')[0]) {
-                filterMatchesByDate(currentDate);
-            }
-        }, 60000); // Poll every 60 seconds
-    }
+    setInterval(() => {
+        const currentDate = document.getElementById('match-date').value;
+        if (currentDate === new Date().toISOString().split('T')[0]) {
+            // Sử dụng API refresh thay vì Socket.IO
+            fetch('/api/refresh')
+                .then(response => response.json())
+                .then(data => {
+                    updateMatches(data.matches);
+                    updateStandings(data.standings);
+                    updateDateTime(data.last_updated);
+                })
+                .catch(error => console.error('Error polling:', error));
+        }
+    }, 60000); // Poll every 60 seconds
+}
 
     // Initialize page
     document.addEventListener('DOMContentLoaded', () => {
