@@ -171,6 +171,24 @@
         updateMatches(initialData.matches);
         updateStandings(initialData.standings);
         updateDateTime(initialData.last_updated);
+        // Thay thế Socket.IO bằng polling
+    function startPolling() {
+        setInterval(() => {
+            const currentDate = document.getElementById('match-date').value;
+            if (currentDate === new Date().toISOString().split('T')[0]) {
+                filterMatchesByDate(currentDate);
+            }
+        }, 60000); // Poll every 60 seconds
+    }
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', () => {
+        setDefaultDate();
+        if (initialData.standings) {
+            updateStandings(initialData.standings);
+        }
+        updateDateTime(initialData.last_updated);
+        startPolling(); // Start polling for updates
     </script>
 </body>
 </html>
