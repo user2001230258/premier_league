@@ -199,3 +199,89 @@ h1 {
     font-family: monospace;
     display: none; /* Ẩn by default */
 }
+
+/* Thêm vào file styles.css hiện có */
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
+.competition-logo {
+    height: 60px;
+    width: auto;
+}
+
+.team-logo {
+    height: 40px;
+    width: 40px;
+    object-fit: contain;
+}
+
+.team-logo-small {
+    height: 24px;
+    width: 24px;
+    object-fit: contain;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+.date-filter {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.date-filter input {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1em;
+}
+
+.team {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.team.home {
+    justify-content: flex-end;
+}
+
+.team.away {
+    justify-content: flex-start;
+}
+
+.team span {
+    font-weight: bold;
+    color: #37003c;
+}
+
+.standings-table .team-name {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+    }
+    
+    .competition-logo {
+        height: 40px;
+    }
+    
+    .team-logo {
+        height: 30px;
+        width: 30px;
+    }
+    
+    .team-logo-small {
+        height: 20px;
+        width: 20px;
+    }
+}
