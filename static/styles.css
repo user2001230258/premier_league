@@ -1,0 +1,201 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    background-color: #f4f4f4;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    background-color: #37003c;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+h1 {
+    margin-bottom: 10px;
+}
+
+.last-updated {
+    color: #e90052;
+    font-size: 0.9em;
+}
+
+.tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.tab-button {
+    padding: 12px 24px;
+    margin: 0 5px;
+    border: none;
+    background-color: #37003c;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 1em;
+    transition: all 0.3s ease;
+}
+
+.tab-button.active {
+    background-color: #e90052;
+}
+
+.tab-button:hover {
+    background-color: #e90052;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.matches-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.match-card {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: grid;
+    grid-template-columns: 2fr 1fr 2fr;
+    gap: 15px;
+    align-items: center;
+    text-align: center;
+}
+
+.team {
+    font-weight: bold;
+    color: #37003c;
+}
+
+.score {
+    font-size: 1.4em;
+    font-weight: bold;
+    color: #37003c;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.score.live {
+    background-color: #e90052;
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+.status {
+    grid-column: 1 / -1;
+    color: #e90052;
+    font-size: 0.9em;
+    font-weight: bold;
+}
+
+.match-time {
+    grid-column: 1 / -1;
+    color: #666;
+    font-size: 0.8em;
+}
+
+.standings-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.standings-table th,
+.standings-table td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+}
+
+.standings-table th {
+    background-color: #37003c;
+    color: white;
+}
+
+.standings-table .team-name {
+    text-align: left;
+    font-weight: bold;
+    color: #37003c;
+}
+
+.standings-table .points {
+    font-weight: bold;
+    color: #e90052;
+}
+
+.standings-table tr:hover {
+    background-color: #f8f8f8;
+}
+
+.no-matches {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-size: 1.2em;
+    grid-column: 1 / -1;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .matches-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .standings-table {
+        font-size: 0.9em;
+    }
+}
+
+/* Thêm vào file styles.css */
+.no-data {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+}
+
+/* Thêm style cho debugging messages */
+.debug-info {
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin: 10px 0;
+    font-family: monospace;
+    display: none; /* Ẩn by default */
+}

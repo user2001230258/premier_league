@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premier League Live Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Premier League Live Results</h1>
+            <div class="last-updated">Last updated: <span id="update-time"></span></div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('matches')">Live Matches</button>
+            <button class="tab-button" onclick="showTab('standings')">Standings</button>
+        </div>
+
+        <div id="matches" class="tab-content active">
+            <div class="matches-container" id="matches-container">
+                <!-- Matches will be populated here -->
+            </div>
+        </div>
+
+        <div id="standings" class="tab-content">
+            <table class="standings-table">
+                <thead>
+                    <tr>
+                        <th>Pos</th>
+                        <th>Team</th>
+                        <th>P</th>
+                        <th>W</th>
+                        <th>D</th>
+                        <th>L</th>
+                        <th>GD</th>
+                        <th>Pts</th>
+                    </tr>
+                </thead>
+                <tbody id="standings-body">
+                    <!-- Standings will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        
+        // Format date function
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString();
+        }
+
+        function updateDateTime(timestamp) {
+            document.getElementById('update-time').textContent = formatDate(timestamp);
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        function getStatusDisplay(status) {
+            switch(status) {
+                case 'SCHEDULED': return 'Upcoming';
+                case 'LIVE': return 'LIVE';
+                case 'IN_PLAY': return 'Playing';
+                case 'FINISHED': return 'Finished';
+                default: return status;
+            }
+        }
+
+        function updateMatches(matches) {
+            const container = document.getElementById('matches-container');
+            container.innerHTML = '';
+            
+            if (matches.length === 0) {
+                container.innerHTML = '<div class="no-matches">No live matches at the moment</div>';
+                return;
+            }
+
+            matches.forEach(match => {
+                const matchDiv = document.createElement('div');
+                matchDiv.className = 'match-card';
+                matchDiv.innerHTML = `
+                    <div class="team home">${match.home_team}</div>
+                    <div class="score ${match.status === 'LIVE' ? 'live' : ''}">${match.score}</div>
+                    <div class="team away">${match.away_team}</div>
+                    <div class="status">${getStatusDisplay(match.status)}</div>
+                    <div class="match-time">${formatDate(match.utcDate)}</div>
+                `;
+                container.appendChild(matchDiv);
+            });
+        }
+
+        function updateStandings(standings) {
+            const tbody = document.getElementById('standings-body');
+            tbody.innerHTML = '';
+            
+            standings.forEach(team => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${team.position}</td>
+                    <td class="team-name">${team.team}</td>
+                    <td>${team.played}</td>
+                    <td>${team.won}</td>
+                    <td>${team.draw}</td>
+                    <td>${team.lost}</td>
+                    <td>${team.goalDifference}</td>
+                    <td class="points">${team.points}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Socket.io event handlers
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('update_data', (data) => {
+            updateMatches(data.matches);
+            updateStandings(data.standings);
+            updateDateTime(data.last_updated);
+        });
+
+        // Manual refresh function
+        function refreshData() {
+            fetch('/api/refresh')
+                .then(response => response.json())
+                .then(data => {
+                    updateMatches(data.matches);
+                    updateStandings(data.standings);
+                    updateDateTime(data.last_updated);
+                })
+                .catch(error => console.error('Error refreshing data:', error));
+        }
+
+        // Initialize with data from template
+        const initialData = {{ initial_data|tojson|safe }};
+        updateMatches(initialData.matches);
+        updateStandings(initialData.standings);
+        updateDateTime(initialData.last_updated);
+
+        // Thêm vào phần script trong index.html
+function updateStandings(standings) {
+    const tbody = document.getElementById('standings-body');
+    tbody.innerHTML = '';
+    
+    if (!standings || standings.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="no-data">
+                    No standings data available at the moment.
+                    Please check your API configuration.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    standings.forEach(team => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${team.position}</td>
+            <td class="team-name">${team.team}</td>
+            <td>${team.played}</td>
+            <td>${team.won}</td>
+            <td>${team.draw}</td>
+            <td>${team.lost}</td>
+            <td>${team.goalDifference}</td>
+            <td class="points">${team.points}</td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    // Log để debug
+    console.log('Updated standings:', standings);
+}
+
+// Thêm event listener cho lỗi socket
+socket.on('connect_error', (error) => {
+    console.error('Socket connection error:', error);
+});
+
+socket.on('error', (error) => {
+    console.error('Socket error:', error);
+});
+    </script>
+</body>
+</html>
